@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warehouse Delivery Booking</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      width: 100%;
+      max-width: 680px;
+      padding: 2.5rem;
+    }
+
+    .logo-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 2px solid #e8eaed;
+    }
+
+    .logo-bar h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #1a1a2e;
+    }
+
+    .logo-bar span {
+      font-size: 0.9rem;
+      color: #6b7280;
+      font-weight: 400;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+      margin: 1.8rem 0 1rem;
+    }
+
+    .field {
+      margin-bottom: 1.2rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.4rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.6rem 0.9rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      color: #111827;
+      transition: border-color 0.15s;
+      background: #fff;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+
+    input.error, select.error { border-color: #ef4444; }
+
+    .field-error {
+      font-size: 0.78rem;
+      color: #ef4444;
+      margin-top: 0.3rem;
+      display: none;
+    }
+
+    /* PO table */
+    .po-table { width: 100%; border-collapse: collapse; margin-bottom: 0.8rem; }
+
+    .po-table th {
+      text-align: left;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #6b7280;
+      padding: 0 0.5rem 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .po-row td { padding: 0.3rem 0.4rem; vertical-align: top; }
+    .po-row td:first-child { width: 60%; }
+    .po-row td:nth-child(2) { width: 25%; }
+    .po-row td:last-child { width: 15%; text-align: center; padding-top: 0.5rem; }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #ef4444;
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 0.3rem;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+
+    .btn-remove:hover { background: #fee2e2; }
+
+    .btn-add {
+      background: #f3f4f6;
+      border: 1.5px dashed #9ca3af;
+      border-radius: 8px;
+      color: #374151;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      width: 100%;
+      transition: background 0.15s, border-color 0.15s;
+    }
+
+    .btn-add:hover { background: #e5e7eb; border-color: #6b7280; }
+
+    .po-summary {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.875rem;
+      color: #475569;
+      margin-top: 0.5rem;
+    }
+
+    .po-summary strong { color: #1e293b; }
+
+    .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .btn-submit {
+      width: 100%;
+      padding: 0.85rem;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 1.8rem;
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .btn-submit:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-submit:disabled { background: #93c5fd; cursor: not-allowed; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .alert {
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      margin-top: 1.2rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    .alert-success {
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      color: #15803d;
+    }
+
+    .alert-error {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      color: #b91c1c;
+    }
+
+    .alert-success h3, .alert-error h3 { font-size: 0.95rem; margin-bottom: 0.4rem; }
+
+    .booking-ref {
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: #166534;
+      margin: 0.5rem 0;
+    }
+
+    .qr-link {
+      display: inline-block;
+      margin-top: 0.6rem;
+      font-size: 0.85rem;
+      color: #2563eb;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 1.5rem; }
+      .date-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo-bar">
+    <div>
+      <h1>Warehouse Delivery Booking</h1>
+      <span>Complete all fields and click Submit to request your delivery slot</span>
+    </div>
+  </div>
+
+  <form id="bookingForm" novalidate>
+
+    <!-- VENDOR -->
+    <div class="section-title">Vendor Details</div>
+
+    <div class="field">
+      <label for="vendorCode">Vendor Number *</label>
+      <input type="text" id="vendorCode" placeholder="e.g. 101503" autocomplete="off" />
+      <div class="field-error" id="err-vendorCode">Please enter your vendor number.</div>
+    </div>
+
+    <div class="field">
+      <label for="email">Confirmation Email *</label>
+      <input type="email" id="email" placeholder="supplier@yourcompany.com" />
+      <div class="field-error" id="err-email">Please enter a valid email address.</div>
+    </div>
+
+    <!-- DC -->
+    <div class="section-title">Distribution Centre</div>
+
+    <div class="field">
+      <label for="dc">DC *</label>
+      <select id="dc">
+        <option value="">— Select DC —</option>
+        <option>ANA LAVERTON</option>
+        <option>ANA NSW RDC</option>
+        <option>ANA QLD RDC</option>
+        <option>ANA WA RDC</option>
+        <option>HS 2037</option>
+        <option>HS 5001</option>
+        <option>SPL LAVERTON</option>
+        <option>SPL NSW RDC</option>
+        <option>SPL QLD RDC</option>
+        <option>SPL WA RDC</option>
+      </select>
+      <div class="field-error" id="err-dc">Please select a DC.</div>
+    </div>
+
+    <!-- PURCHASE ORDERS -->
+    <div class="section-title">Purchase Orders</div>
+
+    <table class="po-table" id="poTable">
+      <thead>
+        <tr>
+          <th>PO Number</th>
+          <th>Pallets</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="poRows">
+        <!-- rows added by JS -->
+      </tbody>
+    </table>
+
+    <div class="field-error" id="err-po" style="margin-bottom:0.5rem">Please add at least one PO with a pallet count.</div>
+
+    <div style="display:flex; gap:0.6rem; margin-bottom:0.8rem; flex-wrap:wrap;">
+      <button type="button" class="btn-add" style="flex:1" onclick="addPoRow()">+ Add Purchase Order</button>
+      <button type="button" class="btn-add" style="flex:1" onclick="toggleBulk()">📋 Paste from Spreadsheet</button>
+    </div>
+
+    <!-- Bulk paste panel -->
+    <div id="bulkPanel" style="display:none; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:8px; padding:1rem; margin-bottom:0.8rem;">
+      <label style="font-size:0.8rem; font-weight:700; color:#374151; display:block; margin-bottom:0.4rem;">
+        Paste two columns from Excel (PO Number + Pallets), or type one per line: <code>PO,pallets</code>
+      </label>
+      <textarea id="bulkText"
+        rows="6"
+        placeholder="4502230317&#9;5&#10;4502230318&#9;3&#10;4502230319&#9;7"
+        style="width:100%; font-family:monospace; font-size:0.85rem; padding:0.5rem 0.8rem; border:1.5px solid #d1d5db; border-radius:6px; resize:vertical; color:#111827;"></textarea>
+      <div id="bulkError" style="color:#ef4444; font-size:0.78rem; margin-top:0.3rem; display:none;"></div>
+      <div style="display:flex; gap:0.5rem; margin-top:0.6rem;">
+        <button type="button" onclick="importBulk()" style="background:#2563eb; color:#fff; border:none; border-radius:6px; padding:0.45rem 1rem; font-size:0.875rem; font-weight:600; cursor:pointer;">Import Rows</button>
+        <button type="button" onclick="toggleBulk()" style="background:#f3f4f6; color:#374151; border:1.5px solid #d1d5db; border-radius:6px; padding:0.45rem 1rem; font-size:0.875rem; font-weight:600; cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+
+    <div class="po-summary" id="poSummary" style="display:none">
+      Total: <strong id="totalPallets">0</strong> pallets across <strong id="totalPos">0</strong> PO(s)
+    </div>
+
+    <!-- DELIVERY SLOT -->
+    <div class="section-title">Preferred Delivery Slot</div>
+
+    <div class="date-row">
+      <div class="field">
+        <label for="prefDate">Preferred Date *</label>
+        <input type="date" id="prefDate" />
+        <div class="field-error" id="err-prefDate">Please select a weekday on or after today.</div>
+      </div>
+
+      <div class="field">
+        <label for="prefTime">Preferred Time</label>
+        <select id="prefTime">
+          <option value="ANY">No Preference</option>
+          <option value="MORNING">Morning (8am – 12pm)</option>
+          <option value="AFTERNOON">Afternoon (12pm – 5pm)</option>
+        </select>
+      </div>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submitBtn">
+      <div class="spinner" id="spinner"></div>
+      <span id="submitLabel">Request Delivery Slot</span>
+    </button>
+
+  </form>
+
+  <!-- SUCCESS -->
+  <div class="alert alert-success" id="alertSuccess">
+    <h3>✅ Request Received!</h3>
+    <p>Thank you — your delivery booking request has been submitted.<br>
+    You will receive a confirmation email shortly with your booking reference and slot details.<br><br>
+    If you do not receive an email within 15 minutes please contact the warehouse team.</p>
+  </div>
+
+  <!-- ERROR -->
+  <div class="alert alert-error" id="alertError">
+    <h3>⚠️ Booking Not Completed</h3>
+    <div id="errorMsg"></div>
+  </div>
+</div>
+
+<script>
+  // ── CONFIG ────────────────────────────────────────────────────────────────
+  // Replace this URL with your Power Automate HTTP trigger URL
+  const WEBHOOK_URL = "https://defaultf96d263d25404d6da0521e3a6c55cc.36.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/6749fcc7381a419481e7ef4940bbacba/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=NJm1WRrYR32W8nNYl98fEvAYG8OiH-1F9zovapEfMFQ";
+  // ─────────────────────────────────────────────────────────────────────────
+
+  let poRowId = 0;
+
+  function addPoRow() {
+    poRowId++;
+    const id = poRowId;
+    const tbody = document.getElementById("poRows");
+    const tr = document.createElement("tr");
+    tr.className = "po-row";
+    tr.id = "poRow_" + id;
+    tr.innerHTML = `
+      <td>
+        <input type="text" id="poNum_${id}" placeholder="e.g. 4502230317" autocomplete="off" oninput="updateSummary()" />
+      </td>
+      <td>
+        <input type="number" id="poPal_${id}" placeholder="0" min="1" max="999" oninput="updateSummary()" />
+      </td>
+      <td>
+        <button type="button" class="btn-remove" onclick="removePoRow(${id})" title="Remove">×</button>
+      </td>`;
+    tbody.appendChild(tr);
+    updateSummary();
+  }
+
+  function removePoRow(id) {
+    const row = document.getElementById("poRow_" + id);
+    if (row) row.remove();
+    updateSummary();
+  }
+
+  function getPoRows() {
+    const rows = document.querySelectorAll(".po-row");
+    const result = [];
+    rows.forEach(row => {
+      const idMatch = row.id.match(/poRow_(\d+)/);
+      if (!idMatch) return;
+      const n = idMatch[1];
+      const po = (document.getElementById("poNum_" + n)?.value || "").trim();
+      const pal = parseInt(document.getElementById("poPal_" + n)?.value || "0");
+      if (po) result.push({ po, pallets: isNaN(pal) ? 0 : pal });
+    });
+    return result;
+  }
+
+  function updateSummary() {
+    const rows = getPoRows();
+    const totalPal = rows.reduce((s, r) => s + r.pallets, 0);
+    const summary = document.getElementById("poSummary");
+    if (rows.length > 0) {
+      summary.style.display = "block";
+      document.getElementById("totalPallets").textContent = totalPal;
+      document.getElementById("totalPos").textContent = rows.length;
+    } else {
+      summary.style.display = "none";
+    }
+  }
+
+  // Set min date to today, disable weekends
+  (function setDateMin() {
+    const today = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    document.getElementById("prefDate").min =
+      `${today.getFullYear()}-${pad(today.getMonth()+1)}-${pad(today.getDate())}`;
+  })();
+
+  function isWeekend(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.getDay() === 0 || d.getDay() === 6;
+  }
+
+  function showError(fieldId, show) {
+    const input = document.getElementById(fieldId);
+    const err = document.getElementById("err-" + fieldId);
+    if (input) input.classList.toggle("error", show);
+    if (err) err.style.display = show ? "block" : "none";
+  }
+
+  function validateForm() {
+    let valid = true;
+
+    const vendorCode = document.getElementById("vendorCode").value.trim();
+    showError("vendorCode", !vendorCode);
+    if (!vendorCode) valid = false;
+
+    const email = document.getElementById("email").value.trim();
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    showError("email", !emailOk);
+    if (!emailOk) valid = false;
+
+    const dc = document.getElementById("dc").value;
+    showError("dc", !dc);
+    if (!dc) valid = false;
+
+    const rows = getPoRows();
+    const poOk = rows.length > 0 && rows.every(r => r.po && r.pallets > 0);
+    const poErr = document.getElementById("err-po");
+    poErr.style.display = poOk ? "none" : "block";
+    if (!poOk) valid = false;
+
+    const prefDate = document.getElementById("prefDate").value;
+    const dateOk = prefDate && !isWeekend(prefDate);
+    showError("prefDate", !dateOk);
+    if (!dateOk) valid = false;
+
+    return valid;
+  }
+
+  document.getElementById("bookingForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    hideAlerts();
+
+    if (!validateForm()) return;
+
+    const rows      = getPoRows();
+    const totalPal  = rows.reduce((s, r) => s + r.pallets, 0);
+    const poStrings = rows.map(r => r.po);
+
+    const payload = {
+      vendor_code:      document.getElementById("vendorCode").value.trim(),
+      dc:               document.getElementById("dc").value,
+      po_list:          JSON.stringify(poStrings),
+      po_detail:        JSON.stringify(rows),
+      total_pallets:    totalPal,
+      preferred_date:   document.getElementById("prefDate").value,
+      preferred_time:   document.getElementById("prefTime").value,
+      email:            document.getElementById("email").value.trim()
+    };
+
+    setLoading(true);
+
+    try {
+      await fetch(WEBHOOK_URL, {
+        method:  "POST",
+        mode:    "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body:    JSON.stringify(payload)
+      });
+      // Show thank-you regardless of response — confirmation comes by email
+      showSuccess();
+    } catch (err) {
+      showErrorMsg("Could not reach the booking service. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  function setLoading(on) {
+    const btn    = document.getElementById("submitBtn");
+    const label  = document.getElementById("submitLabel");
+    const spinner = document.getElementById("spinner");
+    btn.disabled = on;
+    label.textContent = on ? "Submitting…" : "Request Delivery Slot";
+    spinner.style.display = on ? "block" : "none";
+  }
+
+  function hideAlerts() {
+    document.getElementById("alertSuccess").style.display = "none";
+    document.getElementById("alertError").style.display   = "none";
+  }
+
+  function showSuccess() {
+    document.getElementById("alertSuccess").style.display = "block";
+    document.getElementById("alertSuccess").scrollIntoView({ behavior: "smooth" });
+    document.getElementById("bookingForm").style.display = "none";
+  }
+
+  function showErrorMsg(msg) {
+    document.getElementById("errorMsg").textContent = msg;
+    document.getElementById("alertError").style.display = "block";
+    document.getElementById("alertError").scrollIntoView({ behavior: "smooth" });
+  }
+
+  // Start with one empty PO row
+  addPoRow();
+
+  function toggleBulk() {
+    const panel = document.getElementById("bulkPanel");
+    const visible = panel.style.display !== "none";
+    panel.style.display = visible ? "none" : "block";
+    if (!visible) {
+      document.getElementById("bulkText").value = "";
+      document.getElementById("bulkError").style.display = "none";
+      document.getElementById("bulkText").focus();
+    }
+  }
+
+  function importBulk() {
+    const raw = document.getElementById("bulkText").value.trim();
+    const errDiv = document.getElementById("bulkError");
+    errDiv.style.display = "none";
+
+    if (!raw) {
+      errDiv.textContent = "Nothing to import — please paste your data first.";
+      errDiv.style.display = "block";
+      return;
+    }
+
+    const lines = raw.split(/\r?\n/).filter(l => l.trim());
+    const parsed = [];
+    const bad = [];
+
+    lines.forEach((line, i) => {
+      // Support tab (Excel paste), comma, semicolon, or space as separator
+      const parts = line.trim().split(/\t|,|;|\s{2,}/).map(p => p.trim()).filter(Boolean);
+      const po  = parts[0] || "";
+      const pal = parseInt(parts[1] || "0");
+      if (po && !isNaN(pal) && pal > 0) {
+        parsed.push({ po, pallets: pal });
+      } else {
+        bad.push(i + 1);
+      }
+    });
+
+    if (parsed.length === 0) {
+      errDiv.textContent = "No valid rows found. Format should be: PO number, then pallets (tab or comma separated).";
+      errDiv.style.display = "block";
+      return;
+    }
+
+    if (bad.length > 0) {
+      errDiv.textContent = `Skipped ${bad.length} row(s) with missing or invalid data (lines: ${bad.join(", ")}).`;
+      errDiv.style.display = "block";
+    }
+
+    // Clear existing rows and add parsed ones
+    document.getElementById("poRows").innerHTML = "";
+    poRowId = 0;
+    parsed.forEach(item => {
+      addPoRow();
+      const n = poRowId;
+      document.getElementById("poNum_" + n).value = item.po;
+      document.getElementById("poPal_" + n).value = item.pallets;
+    });
+
+    updateSummary();
+    if (bad.length === 0) toggleBulk();
+  }
+</script>
+
+</body>
+</html>
