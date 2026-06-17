@@ -606,6 +606,34 @@
     updateSummary();
     if (bad.length === 0) toggleBulk();
   }
+
+  // Pre-fill vendor number from URL parameter e.g. ?vendor=101503
+  // Also supports ?dc=SPL%20LAVERTON to pre-select the DC
+  (function prefillFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const vendor = params.get("vendor");
+    const dc     = params.get("dc");
+
+    if (vendor) {
+      const field = document.getElementById("vendorCode");
+      field.value = vendor.trim();
+      // Make the field read-only so the vendor can't change their own number
+      field.readOnly = true;
+      field.style.background = "#f3f4f6";
+      field.style.color = "#6b7280";
+    }
+
+    if (dc) {
+      const select = document.getElementById("dc");
+      // Find and select the matching option
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === dc.trim()) {
+          select.selectedIndex = i;
+          break;
+        }
+      }
+    }
+  })();
 </script>
 
 </body>
